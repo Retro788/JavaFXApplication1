@@ -1,38 +1,44 @@
 plugins { 
-    id " java\ 
- id \application\ 
- id \org.openjfx.javafxplugin\ version \0.0.14\ 
+    id 'java' 
+    id 'application' 
+    id 'org.openjfx.javafxplugin' version '0.0.14' 
 } 
 
-group = \javafxapplication1\ 
-version = \1.0-SNAPSHOT\ 
-sourceCompatibility = \11\ 
-targetCompatibility = \11\ 
+group = 'javafxapplication1' 
+version = '1.0-SNAPSHOT' 
+
+java { 
+    toolchain { 
+        languageVersion = JavaLanguageVersion.of(24) 
+    } 
+} 
 
 repositories { 
- mavenCentral() 
-} 
-
-javafx { 
- version = \24.0.1\ // tu versión de JavaFX 
- modules = [ \javafx.controls\, \javafx.fxml\ ] 
+    mavenCentral() 
 } 
 
 dependencies { 
- implementation \mysql:mysql-connector-java:5.1.49\ 
- implementation \com.zaxxer:HikariCP:4.0.3\ 
- implementation \org.mindrot:jbcrypt:0.4\ 
- implementation \org.slf4j:slf4j-api:1.7.30\ 
- implementation \ch.qos.logback:logback-classic:1.2.3\ 
+    implementation 'org.openjfx:javafx-controls:24.0.0' 
+    implementation 'org.openjfx:javafx-fxml:24.0.0' 
+    implementation 'mysql:mysql-connector-java:8.0.33' 
+    implementation 'org.slf4j:slf4j-api:2.0.7' 
+    implementation 'ch.qos.logback:logback-classic:1.4.5' 
+    implementation 'org.mindrot:jbcrypt:0.4' 
+    implementation 'commons-codec:commons-codec:1.15' 
+} 
+
+javafx { 
+    version = '24.0.0' 
+    modules = [ 'javafx.controls', 'javafx.fxml' ] 
 } 
 
 application { 
- mainClass = \javafxapplication1.JavaFXApplication1\ 
+    mainClass = 'javafxapplication1.JavaFXApplication1' 
 } 
 
-tasks.named(\run\, JavaExec) { 
- jvmArgs = [ 
- \--module-path\, classpath.asPath, 
- \--add-modules\, \javafx.controls,javafx.fxml\ 
- ] 
+tasks.named('run', JavaExec) { 
+    jvmArgs = [ 
+        '--module-path', classpath.asPath, 
+        '--add-modules', 'javafx.controls,javafx.fxml' 
+    ] 
 }
