@@ -1,0 +1,51 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.14'
+}
+
+group = 'javafxapplication1'
+version = '1.0-SNAPSHOT'
+
+// Usamos Java 11+ para poder cargar JavaFX desde el plugin
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    // Ajusta la versión si descargas otra
+    version = '24.0.1'
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+dependencies {
+    // JDBC Driver para MySQL
+    implementation 'mysql:mysql-connector-java:5.1.49'
+
+    // Pool de conexiones
+    implementation 'com.zaxxer:HikariCP:4.0.3'
+
+    // Hashing de contraseñas
+    implementation 'org.mindrot:jbcrypt:0.4'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
+}
+
+application {
+    // Clase principal de tu aplicación
+    mainClass = 'javafxapplication1.JavaFXApplication1'
+}
+
+// Esta sección se encarga de pasar el module-path en la tarea 'run'
+// (el plugin javafx ya lo aplica también al compilar y testear).
+tasks.named('run', JavaExec) {
+    jvmArgs = [
+      '--module-path', classpath.asPath,
+      '--add-modules', 'javafx.controls,javafx.fxml'
+    ]
+}
