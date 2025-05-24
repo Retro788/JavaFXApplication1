@@ -20,6 +20,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
@@ -28,40 +29,29 @@ import javafx.stage.Stage;
  *
  * @author rohit
  */
-public class FXMLAddTreatmentController implements Initializable {
-    private static final Logger logger = LoggerFactory.getLogger(FXMLAddTreatmentController.class);
-    
-    private String currentRole;
-    
-    public void setCurrentRole(String role) {
-        this.currentRole = role;
-        logger.info("Rol establecido en AddTreatmentController: {}", role);
-        if (!List.of("Practicante", "Operator", "Docente").contains(role)) {
-            // Deshabilitar el botón de guardar si el rol no tiene permisos
-            if (saveButton != null) {
-                saveButton.setDisable(true);
-                showAlert(AlertType.WARNING, "Acceso restringido", 
-                          "No tiene permisos para añadir tratamientos con el rol: " + role);
-            }
-        }
-    }
+public class FXMLUpdateDentistController implements Initializable {
 
-    @FXML MenuBar myMenuBar;
+        @FXML MenuBar myMenuBar;
     
-    @FXML private TextField treatmentid;
-    @FXML private TextField treatmentname;
-    @FXML private TextField treatmentamount;
-    @FXML private Button saveButton; // Botón para guardar tratamiento
-    
+    @FXML private TextField dentistid;
+    @FXML private TextField dentistname;
+    @FXML private TextField dentistage;
+    @FXML private ChoiceBox dentistgender;
+    @FXML private TextArea dentistaddress;
+    @FXML private TextField dentistphone;
+    @FXML private ChoiceBox dentistbloodgroup;
+    @FXML private TextField dentistspeciality;
+
     
     Connection con = null;
     PreparedStatement preparedStatement = null;
     ResultSet resultSet = null;
     
-    public FXMLAddTreatmentController(){
+    public FXMLUpdateDentistController(){
         con = ConnectionUtil.connectdb();
     }
 
+    
     @FXML
     private void logoutButtonAction(ActionEvent event) throws IOException {
         Parent login_parent = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));   
@@ -157,46 +147,23 @@ public class FXMLAddTreatmentController implements Initializable {
         app_stage.setScene(add_patient_scene);
         app_stage.show();
     }
-    @FXML
-    private void saveTreatment(ActionEvent event){
-        // Validar que el usuario tenga permisos para guardar
-        if (currentRole != null && !List.of("Practicante", "Operator", "Docente").contains(currentRole)) {
-            showAlert(AlertType.WARNING, "Acceso restringido", 
-                      "No tiene permisos para añadir tratamientos con el rol: " + currentRole);
-            return;
-        }
-        
-        // Validar campos obligatorios
-        if (treatmentid.getText().isEmpty() || treatmentname.getText().isEmpty() || 
-            treatmentamount.getText().isEmpty()) {
-            showAlert(AlertType.WARNING, "Datos incompletos", 
-                      "Por favor complete todos los campos obligatorios");
-            return;
-        }
-        
-        // Validar que el ID sea numérico
-        if (!isNumeric(treatmentid.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El ID debe ser un valor numérico");
-            return;
-        }
-        
-        // Validar que el monto sea decimal
-        if (!isDecimal(treatmentamount.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El monto debe ser un valor decimal válido");
-            return;
-        }
 
+    @FXML
+    private void updateDentist(ActionEvent event){
         try{
-            preparedStatement = con.prepareStatement("INSERT INTO treatment values(?,?,?)");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
-            preparedStatement.setString(2,treatmentname.getText().toString());
-            preparedStatement.setString(3,treatmentamount.getText().toString());
+            preparedStatement = con.prepareStatement("UPDATE dentist SET dentistname = ? and dentistage = ? and dentistgender = ? and dentistaddress = ? and dentistphone = ? and dentistbloodgroup = ? and dentistspeciality = ? WHERE dentistid = ?");
+            preparedStatement.setString(1,dentistname.getText().toString());
+            preparedStatement.setString(3,dentistage.getText().toString());
+            preparedStatement.setString(3,dentistgender.getValue().toString());
+            preparedStatement.setString(4,dentistaddress.getText().toString());
+            preparedStatement.setString(5,dentistphone.getText().toString());
+            preparedStatement.setString(6,dentistbloodgroup.getValue().toString());
+            preparedStatement.setString(7,dentistspeciality.getText().toString());
+            preparedStatement.setInt(8,Integer.parseInt(dentistid.getText().toString()));
             preparedStatement.executeUpdate();
             
-            preparedStatement = con.prepareStatement("SELECT * FROM treatment WHERE treatmentid = ?");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
+            preparedStatement = con.prepareStatement("SELECT * FROM dentist WHERE dentistid = ?");
+            preparedStatement.setInt(1,Integer.parseInt(dentistid.getText().toString()));
             resultSet = preparedStatement.executeQuery();
             if(resultSet.next()){
                 System.out.print("Saved");
@@ -219,25 +186,7 @@ public class FXMLAddTreatmentController implements Initializable {
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Si ya se estableció el rol antes de la inicialización, aplicar restricciones
-        if (currentRole != null) {
-            setCurrentRole(currentRole);
-        }
-    }
+        // TODO
+    }    
     
-    private boolean isNumeric(String str) {
-        return str != null && str.matches("\\d+");
-    }
-    
-    private boolean isDecimal(String str) {
-        return str != null && str.matches("\\d+(\\.\\d+)?");
-    }
-    
-    private void showAlert(AlertType alertType, String title, String message) {
-        Alert alert = new Alert(alertType);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
 }

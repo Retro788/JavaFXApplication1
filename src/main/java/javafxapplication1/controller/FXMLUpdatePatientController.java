@@ -20,6 +20,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
@@ -28,40 +29,29 @@ import javafx.stage.Stage;
  *
  * @author rohit
  */
-public class FXMLAddTreatmentController implements Initializable {
-    private static final Logger logger = LoggerFactory.getLogger(FXMLAddTreatmentController.class);
-    
-    private String currentRole;
-    
-    public void setCurrentRole(String role) {
-        this.currentRole = role;
-        logger.info("Rol establecido en AddTreatmentController: {}", role);
-        if (!List.of("Practicante", "Operator", "Docente").contains(role)) {
-            // Deshabilitar el botón de guardar si el rol no tiene permisos
-            if (saveButton != null) {
-                saveButton.setDisable(true);
-                showAlert(AlertType.WARNING, "Acceso restringido", 
-                          "No tiene permisos para añadir tratamientos con el rol: " + role);
-            }
-        }
-    }
+public class FXMLUpdatePatientController implements Initializable {
 
     @FXML MenuBar myMenuBar;
     
-    @FXML private TextField treatmentid;
-    @FXML private TextField treatmentname;
-    @FXML private TextField treatmentamount;
-    @FXML private Button saveButton; // Botón para guardar tratamiento
-    
+    @FXML private TextField patientid;
+    @FXML private TextField patientname;
+    @FXML private TextField patientage;
+    @FXML private ChoiceBox patientgender;
+    @FXML private TextArea patientaddress;
+    @FXML private TextField patientphone;
+    @FXML private ChoiceBox patientbloodgroup;
+    @FXML private TextArea patienthealthproblems;
+
     
     Connection con = null;
     PreparedStatement preparedStatement = null;
     ResultSet resultSet = null;
     
-    public FXMLAddTreatmentController(){
+    public FXMLUpdatePatientController(){
         con = ConnectionUtil.connectdb();
     }
 
+    
     @FXML
     private void logoutButtonAction(ActionEvent event) throws IOException {
         Parent login_parent = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));   
@@ -91,7 +81,7 @@ public class FXMLAddTreatmentController implements Initializable {
         app_stage.show();
 
     }
-
+    
     @FXML
     private void adddentistButtonAction(ActionEvent event) throws IOException {
         Parent add_patient_parent = FXMLLoader.load(getClass().getResource("FXMLAddDentist.fxml"));   
@@ -157,49 +147,26 @@ public class FXMLAddTreatmentController implements Initializable {
         app_stage.setScene(add_patient_scene);
         app_stage.show();
     }
-    @FXML
-    private void saveTreatment(ActionEvent event){
-        // Validar que el usuario tenga permisos para guardar
-        if (currentRole != null && !List.of("Practicante", "Operator", "Docente").contains(currentRole)) {
-            showAlert(AlertType.WARNING, "Acceso restringido", 
-                      "No tiene permisos para añadir tratamientos con el rol: " + currentRole);
-            return;
-        }
-        
-        // Validar campos obligatorios
-        if (treatmentid.getText().isEmpty() || treatmentname.getText().isEmpty() || 
-            treatmentamount.getText().isEmpty()) {
-            showAlert(AlertType.WARNING, "Datos incompletos", 
-                      "Por favor complete todos los campos obligatorios");
-            return;
-        }
-        
-        // Validar que el ID sea numérico
-        if (!isNumeric(treatmentid.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El ID debe ser un valor numérico");
-            return;
-        }
-        
-        // Validar que el monto sea decimal
-        if (!isDecimal(treatmentamount.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El monto debe ser un valor decimal válido");
-            return;
-        }
 
+    @FXML
+    private void updatePatient(ActionEvent event){
         try{
-            preparedStatement = con.prepareStatement("INSERT INTO treatment values(?,?,?)");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
-            preparedStatement.setString(2,treatmentname.getText().toString());
-            preparedStatement.setString(3,treatmentamount.getText().toString());
+            preparedStatement = con.prepareStatement("UPDATE patient SET patientname = ? and patientage = ? and patientgender = ? and patientaddress = ? and patientphone = ? and patientbloodgroup = ? and patienthealthproblems = ? WHERE patientid = ?");
+            preparedStatement.setString(1,patientname.getText().toString());
+            preparedStatement.setString(2,patientage.getText().toString());
+            preparedStatement.setString(3,patientgender.getValue().toString());
+            preparedStatement.setString(4,patientaddress.getText().toString());
+            preparedStatement.setString(5,patientphone.getText().toString());
+            preparedStatement.setString(6,patientbloodgroup.getValue().toString());
+            preparedStatement.setString(7,patienthealthproblems.getText().toString());
+            preparedStatement.setInt(8,Integer.parseInt(patientid.getText().toString()));
             preparedStatement.executeUpdate();
             
-            preparedStatement = con.prepareStatement("SELECT * FROM treatment WHERE treatmentid = ?");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
+            preparedStatement = con.prepareStatement("SELECT * FROM patient WHERE patientid = ?");
+            preparedStatement.setInt(1,Integer.parseInt(patientid.getText().toString()));
             resultSet = preparedStatement.executeQuery();
             if(resultSet.next()){
-                System.out.print("Saved");
+                System.out.print("Updated");
                 Parent add_patient_parent = FXMLLoader.load(getClass().getResource("FXMLHome.fxml"));   
                 Scene add_patient_scene = new Scene(add_patient_parent);
                 Stage app_stage = (Stage)((Node)myMenuBar).getScene().getWindow();
@@ -214,30 +181,18 @@ public class FXMLAddTreatmentController implements Initializable {
         
     }
 
+
+    @FXML
+    private void handleClose(ActionEvent event) {
+        System.exit(0);
+    }
+
     /**
      * Initializes the controller class.
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Si ya se estableció el rol antes de la inicialización, aplicar restricciones
-        if (currentRole != null) {
-            setCurrentRole(currentRole);
-        }
-    }
+        // TODO
+    }    
     
-    private boolean isNumeric(String str) {
-        return str != null && str.matches("\\d+");
-    }
-    
-    private boolean isDecimal(String str) {
-        return str != null && str.matches("\\d+(\\.\\d+)?");
-    }
-    
-    private void showAlert(AlertType alertType, String title, String message) {
-        Alert alert = new Alert(alertType);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
 }

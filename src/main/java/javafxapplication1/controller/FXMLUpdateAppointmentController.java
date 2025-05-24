@@ -28,37 +28,23 @@ import javafx.stage.Stage;
  *
  * @author rohit
  */
-public class FXMLAddTreatmentController implements Initializable {
-    private static final Logger logger = LoggerFactory.getLogger(FXMLAddTreatmentController.class);
+public class FXMLUpdateAppointmentController implements Initializable {
+        @FXML MenuBar myMenuBar;
     
-    private String currentRole;
-    
-    public void setCurrentRole(String role) {
-        this.currentRole = role;
-        logger.info("Rol establecido en AddTreatmentController: {}", role);
-        if (!List.of("Practicante", "Operator", "Docente").contains(role)) {
-            // Deshabilitar el botón de guardar si el rol no tiene permisos
-            if (saveButton != null) {
-                saveButton.setDisable(true);
-                showAlert(AlertType.WARNING, "Acceso restringido", 
-                          "No tiene permisos para añadir tratamientos con el rol: " + role);
-            }
-        }
-    }
-
-    @FXML MenuBar myMenuBar;
-    
-    @FXML private TextField treatmentid;
-    @FXML private TextField treatmentname;
-    @FXML private TextField treatmentamount;
-    @FXML private Button saveButton; // Botón para guardar tratamiento
+    @FXML private TextField appointmentid;
+    @FXML private TextField patientid;
+    @FXML private TextField patientname;
+    @FXML private TextField appointmentdate;
+    @FXML private TextField appointmenttime;
+    @FXML private TextField requesttreatment;
+    @FXML private ChoiceBox dentistname;
     
     
     Connection con = null;
     PreparedStatement preparedStatement = null;
     ResultSet resultSet = null;
     
-    public FXMLAddTreatmentController(){
+    public FXMLUpdateAppointmentController(){
         con = ConnectionUtil.connectdb();
     }
 
@@ -158,45 +144,20 @@ public class FXMLAddTreatmentController implements Initializable {
         app_stage.show();
     }
     @FXML
-    private void saveTreatment(ActionEvent event){
-        // Validar que el usuario tenga permisos para guardar
-        if (currentRole != null && !List.of("Practicante", "Operator", "Docente").contains(currentRole)) {
-            showAlert(AlertType.WARNING, "Acceso restringido", 
-                      "No tiene permisos para añadir tratamientos con el rol: " + currentRole);
-            return;
-        }
-        
-        // Validar campos obligatorios
-        if (treatmentid.getText().isEmpty() || treatmentname.getText().isEmpty() || 
-            treatmentamount.getText().isEmpty()) {
-            showAlert(AlertType.WARNING, "Datos incompletos", 
-                      "Por favor complete todos los campos obligatorios");
-            return;
-        }
-        
-        // Validar que el ID sea numérico
-        if (!isNumeric(treatmentid.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El ID debe ser un valor numérico");
-            return;
-        }
-        
-        // Validar que el monto sea decimal
-        if (!isDecimal(treatmentamount.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El monto debe ser un valor decimal válido");
-            return;
-        }
-
+    private void updateAppointment(ActionEvent event){
         try{
-            preparedStatement = con.prepareStatement("INSERT INTO treatment values(?,?,?)");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
-            preparedStatement.setString(2,treatmentname.getText().toString());
-            preparedStatement.setString(3,treatmentamount.getText().toString());
+            preparedStatement = con.prepareStatement("UPDATE appointment SET patientid = ? and patientname = ? and appointmentdate = ? and appointmenttime = ? and requesttreatment = ? and dentistname = ? WHERE appointmentid = ?");
+            preparedStatement.setString(1,patientid.getText().toString());
+            preparedStatement.setString(2,patientname.getText().toString());
+            preparedStatement.setString(3,appointmentdate.getText().toString());
+            preparedStatement.setString(4,appointmenttime.getText().toString());
+            preparedStatement.setString(5,requesttreatment.getText().toString());
+            preparedStatement.setString(6,dentistname.getValue().toString());
+            preparedStatement.setInt(7,Integer.parseInt(appointmentid.getText().toString()));
             preparedStatement.executeUpdate();
             
-            preparedStatement = con.prepareStatement("SELECT * FROM treatment WHERE treatmentid = ?");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
+            preparedStatement = con.prepareStatement("SELECT * FROM appointment WHERE appointmentid = ?");
+            preparedStatement.setInt(1,Integer.parseInt(appointmentid.getText().toString()));
             resultSet = preparedStatement.executeQuery();
             if(resultSet.next()){
                 System.out.print("Saved");
@@ -219,25 +180,7 @@ public class FXMLAddTreatmentController implements Initializable {
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Si ya se estableció el rol antes de la inicialización, aplicar restricciones
-        if (currentRole != null) {
-            setCurrentRole(currentRole);
-        }
-    }
+        // TODO
+    }    
     
-    private boolean isNumeric(String str) {
-        return str != null && str.matches("\\d+");
-    }
-    
-    private boolean isDecimal(String str) {
-        return str != null && str.matches("\\d+(\\.\\d+)?");
-    }
-    
-    private void showAlert(AlertType alertType, String title, String message) {
-        Alert alert = new Alert(alertType);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
 }

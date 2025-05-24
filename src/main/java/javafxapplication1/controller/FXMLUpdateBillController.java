@@ -18,8 +18,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
@@ -28,37 +28,22 @@ import javafx.stage.Stage;
  *
  * @author rohit
  */
-public class FXMLAddTreatmentController implements Initializable {
-    private static final Logger logger = LoggerFactory.getLogger(FXMLAddTreatmentController.class);
+public class FXMLUpdateBillController implements Initializable {
+            @FXML MenuBar myMenuBar;
     
-    private String currentRole;
-    
-    public void setCurrentRole(String role) {
-        this.currentRole = role;
-        logger.info("Rol establecido en AddTreatmentController: {}", role);
-        if (!List.of("Practicante", "Operator", "Docente").contains(role)) {
-            // Deshabilitar el botón de guardar si el rol no tiene permisos
-            if (saveButton != null) {
-                saveButton.setDisable(true);
-                showAlert(AlertType.WARNING, "Acceso restringido", 
-                          "No tiene permisos para añadir tratamientos con el rol: " + role);
-            }
-        }
-    }
-
-    @FXML MenuBar myMenuBar;
-    
-    @FXML private TextField treatmentid;
-    @FXML private TextField treatmentname;
-    @FXML private TextField treatmentamount;
-    @FXML private Button saveButton; // Botón para guardar tratamiento
+    @FXML private TextField billid;
+    @FXML private TextField dentistname;
+    @FXML private TextField billdate;
+    @FXML private TextField patientname;
+    @FXML private TextArea treatments;
+    @FXML private TextField billtotal;
     
     
     Connection con = null;
     PreparedStatement preparedStatement = null;
     ResultSet resultSet = null;
     
-    public FXMLAddTreatmentController(){
+    public FXMLUpdateBillController(){
         con = ConnectionUtil.connectdb();
     }
 
@@ -158,45 +143,19 @@ public class FXMLAddTreatmentController implements Initializable {
         app_stage.show();
     }
     @FXML
-    private void saveTreatment(ActionEvent event){
-        // Validar que el usuario tenga permisos para guardar
-        if (currentRole != null && !List.of("Practicante", "Operator", "Docente").contains(currentRole)) {
-            showAlert(AlertType.WARNING, "Acceso restringido", 
-                      "No tiene permisos para añadir tratamientos con el rol: " + currentRole);
-            return;
-        }
-        
-        // Validar campos obligatorios
-        if (treatmentid.getText().isEmpty() || treatmentname.getText().isEmpty() || 
-            treatmentamount.getText().isEmpty()) {
-            showAlert(AlertType.WARNING, "Datos incompletos", 
-                      "Por favor complete todos los campos obligatorios");
-            return;
-        }
-        
-        // Validar que el ID sea numérico
-        if (!isNumeric(treatmentid.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El ID debe ser un valor numérico");
-            return;
-        }
-        
-        // Validar que el monto sea decimal
-        if (!isDecimal(treatmentamount.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El monto debe ser un valor decimal válido");
-            return;
-        }
-
+    private void updateBill(ActionEvent event){
         try{
-            preparedStatement = con.prepareStatement("INSERT INTO treatment values(?,?,?)");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
-            preparedStatement.setString(2,treatmentname.getText().toString());
-            preparedStatement.setString(3,treatmentamount.getText().toString());
+            preparedStatement = con.prepareStatement("UPDATE bill SET dentistname = ? and billdate = ? and patientname = ? and treatments = ? and billtotal = ? WHERE billid = ? ");
+            preparedStatement.setString(1,dentistname.getText().toString());
+            preparedStatement.setString(2,billdate.getText().toString());
+            preparedStatement.setString(3,patientname.getText().toString());
+            preparedStatement.setString(4,treatments.getText().toString());
+            preparedStatement.setString(5,billtotal.getText().toString());
+            preparedStatement.setInt(6,Integer.parseInt(billid.getText().toString()));
             preparedStatement.executeUpdate();
             
-            preparedStatement = con.prepareStatement("SELECT * FROM treatment WHERE treatmentid = ?");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
+            preparedStatement = con.prepareStatement("SELECT * FROM bill WHERE billid = ?");
+            preparedStatement.setInt(1,Integer.parseInt(billid.getText().toString()));
             resultSet = preparedStatement.executeQuery();
             if(resultSet.next()){
                 System.out.print("Saved");
@@ -205,7 +164,6 @@ public class FXMLAddTreatmentController implements Initializable {
                 Stage app_stage = (Stage)((Node)myMenuBar).getScene().getWindow();
                 app_stage.setScene(add_patient_scene);
                 app_stage.show();
-
             }
         }
         catch(Exception e){
@@ -219,25 +177,7 @@ public class FXMLAddTreatmentController implements Initializable {
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Si ya se estableció el rol antes de la inicialización, aplicar restricciones
-        if (currentRole != null) {
-            setCurrentRole(currentRole);
-        }
-    }
+        // TODO
+    }    
     
-    private boolean isNumeric(String str) {
-        return str != null && str.matches("\\d+");
-    }
-    
-    private boolean isDecimal(String str) {
-        return str != null && str.matches("\\d+(\\.\\d+)?");
-    }
-    
-    private void showAlert(AlertType alertType, String title, String message) {
-        Alert alert = new Alert(alertType);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
 }

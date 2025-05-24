@@ -8,9 +8,10 @@ package javafxapplication1;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ResourceBundle;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -18,9 +19,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MenuBar;
-import javafx.scene.control.TextField;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
 /**
@@ -28,56 +30,25 @@ import javafx.stage.Stage;
  *
  * @author rohit
  */
-public class FXMLAddTreatmentController implements Initializable {
-    private static final Logger logger = LoggerFactory.getLogger(FXMLAddTreatmentController.class);
-    
-    private String currentRole;
-    
-    public void setCurrentRole(String role) {
-        this.currentRole = role;
-        logger.info("Rol establecido en AddTreatmentController: {}", role);
-        if (!List.of("Practicante", "Operator", "Docente").contains(role)) {
-            // Deshabilitar el botón de guardar si el rol no tiene permisos
-            if (saveButton != null) {
-                saveButton.setDisable(true);
-                showAlert(AlertType.WARNING, "Acceso restringido", 
-                          "No tiene permisos para añadir tratamientos con el rol: " + role);
-            }
-        }
-    }
+public class FXMLTreatmentListController implements Initializable {
+
+
 
     @FXML MenuBar myMenuBar;
+    @FXML private TableView<ModelTable3> tableview;
+    @FXML private TableColumn<ModelTable,String> col_treatmentid;
+    @FXML private TableColumn<ModelTable,String> col_treatmentname;
+    @FXML private TableColumn<ModelTable,String> col_treatmentamount;
     
-    @FXML private TextField treatmentid;
-    @FXML private TextField treatmentname;
-    @FXML private TextField treatmentamount;
-    @FXML private Button saveButton; // Botón para guardar tratamiento
+    @FXML private ObservableList<ModelTable3> oblist = FXCollections.observableArrayList();
     
     
-    Connection con = null;
-    PreparedStatement preparedStatement = null;
-    ResultSet resultSet = null;
-    
-    public FXMLAddTreatmentController(){
-        con = ConnectionUtil.connectdb();
-    }
-
     @FXML
     private void logoutButtonAction(ActionEvent event) throws IOException {
         Parent login_parent = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));   
         Scene login_scene = new Scene(login_parent);
         Stage app_stage = (Stage)((Node)myMenuBar).getScene().getWindow();
         app_stage.setScene(login_scene);
-        app_stage.show();
-
-    }
-    
-    @FXML
-    private void updatepatientButtonAction(ActionEvent event) throws IOException {
-        Parent add_patient_parent = FXMLLoader.load(getClass().getResource("FXMLUpdatePatient.fxml"));   
-        Scene add_patient_scene = new Scene(add_patient_parent);
-        Stage app_stage = (Stage)((Node)myMenuBar).getScene().getWindow();
-        app_stage.setScene(add_patient_scene);
         app_stage.show();
 
     }
@@ -92,6 +63,15 @@ public class FXMLAddTreatmentController implements Initializable {
 
     }
 
+    @FXML
+    private void updatepatientButtonAction(ActionEvent event) throws IOException {
+        Parent add_patient_parent = FXMLLoader.load(getClass().getResource("FXMLUpdatePatient.fxml"));   
+        Scene add_patient_scene = new Scene(add_patient_parent);
+        Stage app_stage = (Stage)((Node)myMenuBar).getScene().getWindow();
+        app_stage.setScene(add_patient_scene);
+        app_stage.show();
+
+    }
     @FXML
     private void adddentistButtonAction(ActionEvent event) throws IOException {
         Parent add_patient_parent = FXMLLoader.load(getClass().getResource("FXMLAddDentist.fxml"));   
@@ -157,61 +137,10 @@ public class FXMLAddTreatmentController implements Initializable {
         app_stage.setScene(add_patient_scene);
         app_stage.show();
     }
+
     @FXML
-    private void saveTreatment(ActionEvent event){
-        // Validar que el usuario tenga permisos para guardar
-        if (currentRole != null && !List.of("Practicante", "Operator", "Docente").contains(currentRole)) {
-            showAlert(AlertType.WARNING, "Acceso restringido", 
-                      "No tiene permisos para añadir tratamientos con el rol: " + currentRole);
-            return;
-        }
-        
-        // Validar campos obligatorios
-        if (treatmentid.getText().isEmpty() || treatmentname.getText().isEmpty() || 
-            treatmentamount.getText().isEmpty()) {
-            showAlert(AlertType.WARNING, "Datos incompletos", 
-                      "Por favor complete todos los campos obligatorios");
-            return;
-        }
-        
-        // Validar que el ID sea numérico
-        if (!isNumeric(treatmentid.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El ID debe ser un valor numérico");
-            return;
-        }
-        
-        // Validar que el monto sea decimal
-        if (!isDecimal(treatmentamount.getText())) {
-            showAlert(AlertType.WARNING, "Error de formato", 
-                      "El monto debe ser un valor decimal válido");
-            return;
-        }
-
-        try{
-            preparedStatement = con.prepareStatement("INSERT INTO treatment values(?,?,?)");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
-            preparedStatement.setString(2,treatmentname.getText().toString());
-            preparedStatement.setString(3,treatmentamount.getText().toString());
-            preparedStatement.executeUpdate();
-            
-            preparedStatement = con.prepareStatement("SELECT * FROM treatment WHERE treatmentid = ?");
-            preparedStatement.setInt(1,Integer.parseInt(treatmentid.getText().toString()));
-            resultSet = preparedStatement.executeQuery();
-            if(resultSet.next()){
-                System.out.print("Saved");
-                Parent add_patient_parent = FXMLLoader.load(getClass().getResource("FXMLHome.fxml"));   
-                Scene add_patient_scene = new Scene(add_patient_parent);
-                Stage app_stage = (Stage)((Node)myMenuBar).getScene().getWindow();
-                app_stage.setScene(add_patient_scene);
-                app_stage.show();
-
-            }
-        }
-        catch(Exception e){
-            e.printStackTrace();
-        }
-        
+    private void handleClose(ActionEvent event) {
+        System.exit(0);
     }
 
     /**
@@ -219,25 +148,24 @@ public class FXMLAddTreatmentController implements Initializable {
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Si ya se estableció el rol antes de la inicialización, aplicar restricciones
-        if (currentRole != null) {
-            setCurrentRole(currentRole);
+        
+        try{
+        Connection con = ConnectionUtil.connectdb();
+        
+        ResultSet rs = con.createStatement().executeQuery("select * from treatment");
+
+        while(rs.next()){
+            oblist.add(new ModelTable3(rs.getString("treatmentid"),rs.getString("treatmentname"),rs.getString("treatmentamount")));
         }
-    }
-    
-    private boolean isNumeric(String str) {
-        return str != null && str.matches("\\d+");
-    }
-    
-    private boolean isDecimal(String str) {
-        return str != null && str.matches("\\d+(\\.\\d+)?");
-    }
-    
-    private void showAlert(AlertType alertType, String title, String message) {
-        Alert alert = new Alert(alertType);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+        col_treatmentid.setCellValueFactory(new PropertyValueFactory<>("treatmentid"));
+        col_treatmentname.setCellValueFactory(new PropertyValueFactory<>("treatmentname"));
+        col_treatmentamount.setCellValueFactory(new PropertyValueFactory<>("treatmentamount"));
+
+        tableview.setItems(oblist);
+    }    
+
 }
